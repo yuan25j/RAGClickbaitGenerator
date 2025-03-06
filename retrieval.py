@@ -1,6 +1,23 @@
 import csv
+import faiss
+import pickle
+import numpy as np
+from sentence_transformers import SentenceTransformer
 
-def get_similar_examples(paper_title: str, csv_file: str = 'clickbait_data.csv'):
+def embedding_retrieve(query):
+    model = SentenceTransformer("BAAI/bge-small-en")
+    index = faiss.read_index("faiss_index.bin")
+    with open("texts.pkl", "rb") as f:
+        texts = pickle.load(f)
+
+    query_embedding = model.encode([query], convert_to_numpy=True)
+    N = 5  # Number of results
+    distances, indices = index.search(query_embedding, N)
+    print("\nTop similar headlines:")
+    titles = [texts[indices[0][i]] for i in range(N)]
+    return titles
+
+def word_overlap_retrieve(paper_title: str, csv_file: str = 'clickbait_data.csv'):
     """
     Reads the CSV file with two columns: title and a label indicating if it is clickbait.
     Only the titles marked as clickbait are used.
